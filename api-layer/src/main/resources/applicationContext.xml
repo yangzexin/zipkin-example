@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:jpa="http://www.springframework.org/schema/data/jpa"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xsi:schemaLocation="http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd
+        http://www.springframework.org/schema/security
+        http://www.springframework.org/schema/security/spring-security.xsd
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/data/jpa
+        http://www.springframework.org/schema/data/jpa/spring-jpa.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+
+    <bean id="sender" class="zipkin.reporter.okhttp3.OkHttpSender" factory-method="create"
+          destroy-method="close">
+        <constructor-arg type="java.lang.String" value="${zipkin.server.address}"/>
+    </bean>
+
+    <bean id="tracing" class="brave.spring.beans.TracingFactoryBean">
+        <property name="localServiceName" value="${zipkin.service.name}"/>
+        <property name="reporter">
+            <bean class="brave.spring.beans.AsyncReporterFactoryBean">
+                <property name="sender" ref="sender"/>
+                <!-- wait up to half a second for any in-flight spans on close -->
+                <property name="closeTimeout" value="500"/>
+            </bean>
+        </property>
+        <property name="currentTraceContext">
+            <bean class="brave.context.log4j12.MDCCurrentTraceContext" factory-method="create"/>
+        </property>
+    </bean>
+
+    <bean id="httpTracing" class="brave.spring.beans.HttpTracingFactoryBean">
+        <property name="tracing" ref="tracing"/>
+    </bean>
+
+    <bean id="restTemplate" class="org.springframework.web.client.RestTemplate">
+        <property name="interceptors">
+            <list>
+                <bean class="brave.spring.web.TracingClientHttpRequestInterceptor" factory-method="create">
+                    <constructor-arg type="brave.http.HttpTracing" ref="httpTracing"/>
+                </bean>
+            </list>
+        </property>
+    </bean>
+
+    <context:component-scan base-package="tests" />
+
+    <context:property-placeholder location="classpath*:*.properties" />
+</beans>
