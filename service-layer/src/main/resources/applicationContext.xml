@@ -28,11 +28,15 @@
         <constructor-arg type="java.lang.String" value="${zipkin.server.address}"/>
     </bean>
 
+    <bean id="kafkaSender" class="zipkin.reporter.kafka08.KafkaSender" factory-method="create">
+        <constructor-arg type="java.lang.String" value="localhost:9092" />
+    </bean>
+
     <bean id="tracing" class="brave.spring.beans.TracingFactoryBean">
         <property name="localServiceName" value="${zipkin.service.name}"/>
         <property name="reporter">
             <bean class="brave.spring.beans.AsyncReporterFactoryBean">
-                <property name="sender" ref="sender"/>
+                <property name="sender" ref="kafkaSender"/>
                 <!-- wait up to half a second for any in-flight spans on close -->
                 <property name="closeTimeout" value="500"/>
             </bean>

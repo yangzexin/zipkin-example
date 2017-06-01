@@ -196,6 +196,16 @@
       <artifactId>brave-instrumentation-spring-webmvc</artifactId>
       <version>${brave.version}</version>
     </dependency>
+    <dependency>
+      <groupId>io.zipkin.brave</groupId>
+      <artifactId>brave-spancollector-kafka</artifactId>
+      <version>${brave.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin.reporter</groupId>
+      <artifactId>zipkin-sender-kafka08</artifactId>
+      <version>0.10.0</version>
+    </dependency>
     <!-- brave end -->
   </dependencies>
   <build>
